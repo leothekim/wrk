@@ -41,6 +41,7 @@ static void socket_connected(aeEventLoop *, int, void *, int);
 static void socket_writeable(aeEventLoop *, int, void *, int);
 static void socket_readable(aeEventLoop *, int, void *, int);
 static int request_complete(http_parser *);
+static int chunk_complete(http_parser *);
 
 static uint64_t time_us();
 

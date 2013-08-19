@@ -146,6 +146,7 @@ enum flags
   XX(CB_header_field, "the on_header_field callback failed")         \
   XX(CB_header_value, "the on_header_value callback failed")         \
   XX(CB_headers_complete, "the on_headers_complete callback failed") \
+  XX(CB_chunk_complete, "the on_chunk_complete callback failed")     \
   XX(CB_body, "the on_body callback failed")                         \
   XX(CB_message_complete, "the on_message_complete callback failed") \
                                                                      \
@@ -228,6 +229,7 @@ struct http_parser_settings {
   http_cb      on_headers_complete;
   http_data_cb on_body;
   http_cb      on_message_complete;
+  http_cb      on_chunk_complete;
 };
 
 

@@ -34,7 +34,8 @@ static struct sock sock = {
 };
 
 static const struct http_parser_settings parser_settings = {
-    .on_message_complete = request_complete
+    .on_message_complete = request_complete,
+    .on_chunk_complete = chunk_complete
 };
 
 static volatile sig_atomic_t stop = 0;
@@ -166,6 +167,7 @@ int main(int argc, char **argv) {
     uint64_t start    = time_us();
     uint64_t complete = 0;
     uint64_t bytes    = 0;
+    uint64_t chunks   = 0;
     errors errors     = { 0 };
 
     for (uint64_t i = 0; i < cfg.threads; i++) {
@@ -174,6 +176,7 @@ int main(int argc, char **argv) {
 
         complete += t->complete;
         bytes    += t->bytes;
+        chunks   += t->chunks;
 
         errors.connect += t->errors.connect;
         errors.read    += t->errors.read;
@@ -183,9 +186,10 @@ int main(int argc, char **argv) {
     }
 
     uint64_t runtime_us = time_us() - start;
-    long double runtime_s   = runtime_us / 1000000.0;
-    long double req_per_s   = complete   / runtime_s;
-    long double bytes_per_s = bytes      / runtime_s;
+    long double runtime_s     = runtime_us / 1000000.0;
+    long double req_per_s     = complete   / runtime_s;
+    long double bytes_per_s   = bytes      / runtime_s;
+    long double chunks_per_s  = chunks   / runtime_s;
 
     print_stats_header();
     print_stats("Latency", statistics.latency, format_time_us);
@@ -204,6 +208,7 @@ int main(int argc, char **argv) {
         printf("  Non-2xx or 3xx responses: %d\n", errors.status);
     }
 
+    printf("Chunks/sec: %9.2Lf\n", chunks_per_s);
     printf("Requests/sec: %9.2Lf\n", req_per_s);
     printf("Transfer/sec: %10sB\n", format_binary(bytes_per_s));
 
@@ -299,6 +304,7 @@ static int calibrate(aeEventLoop *loop, long long id, void *data) {
     thread->rate     = ceil(rate / 10);
     thread->start    = time_us();
     thread->requests = 0;
+    thread->chunks = 0;
     stats_reset(thread->latency);
 
     aeCreateTimeEvent(loop, thread->interval, sample_rate, thread, NULL);
@@ -357,6 +363,13 @@ static int request_complete(http_parser *parser) {
     reconnect_socket(thread, c);
 
   done:
+    return 0;
+}
+
+static int chunk_complete(http_parser *parser) {
+    connection *c = parser->data;
+    thread *thread = c->thread;
+    thread->chunks++;
     return 0;
 }
 

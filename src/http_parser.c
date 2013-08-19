@@ -1805,6 +1805,7 @@ size_t http_parser_execute (http_parser *parser,
         STRICT_CHECK(ch != LF);
         parser->nread = 0;
         parser->state = s_chunk_size_start;
+        CALLBACK_NOTIFY(chunk_complete);
         break;
 
       default:

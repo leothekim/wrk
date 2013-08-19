@@ -41,6 +41,7 @@ typedef struct {
     uint64_t start;
     uint64_t rate;
     uint64_t missed;
+    uint64_t chunks;
     stats *latency;
     tinymt64_t rand;
     errors errors;
